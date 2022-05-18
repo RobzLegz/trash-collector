@@ -20,8 +20,6 @@ viz.setMultiSample(4)
 viz.fov(60)
 viz.go(viz.FULLSCREEN)
 
-manager = vizproximity.Manager()
-
 # Setup directional light
 viz.MainView.getHeadLight().disable()
 sky_light = viz.addDirectionalLight(euler=(0,20,0))
@@ -52,8 +50,8 @@ male.state(6)
 
 # List of hiding spots for pigeons
 pigeons = []
-for i in range(10):
 
+for i in range(10):
     #Generate random values for position and orientation
     x = random.randint(-4,3)
     z = random.randint(4,8)
@@ -136,8 +134,8 @@ def UpdateScore(score):
 
 def TrialTask(pigeon):
     # Create proximity sensor for pigeon using main view as target
-    #manager.setDebug(True)
-    
+    manager = vizproximity.Manager()
+
     manager.addTarget( vizproximity.Target(viz.MainView) )
 
     sensor = vizproximity.Sensor(vizproximity.Sphere(PROXIMITY_RADIUS),pigeon)
@@ -165,7 +163,6 @@ def MainTask():
     resultPanel.visible(False)
 
     while True:
-
         # Reset score
         score = 0
         UpdateScore(score)
@@ -180,7 +177,7 @@ def MainTask():
                 UpdateScore(score)
 
         if score == len(pigeons):
-            #Display results and ask to quit or play again
+            #Display results and ask to quit or play again 
             resultPanel.setText(RESULTS.format(score,TRIAL_COUNT))
             resultPanel.visible(True)
             yield viztask.waitKeyDown(' ')
