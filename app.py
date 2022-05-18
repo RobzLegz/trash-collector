@@ -1,4 +1,5 @@
-﻿import viz
+﻿from operator import indexOf
+import viz
 import vizact
 import vizcam
 import vizinfo
@@ -8,17 +9,23 @@ import vizfx.postprocess
 from vizfx.postprocess.color import GrayscaleEffect
 from vizfx.postprocess.composite import BlendEffect
 
+# from src.pick import *
+from src.utils.randomiseTrash import get_random_trash
 from src.apearance import set_appearance
 from src.text import *
 
 import math
 import random
 
-from src.constants import TRIAL_COUNT, TRIAL_DURATION, TRIAL_DELAY, PROXIMITY_RADIUS, FLASH_TIME
+from src.constants import *
 
+SCORE = 0
 viz.setMultiSample(4)
-viz.fov(60)
+viz.fov(80)
 viz.go(viz.FULLSCREEN)
+viz.collision(viz.ON)
+
+player_picks = []
 
 # Setup directional light
 viz.MainView.getHeadLight().disable()
@@ -31,7 +38,7 @@ viz.setOption('viz.lightModel.ambient',[0]*3)
 tracker = vizcam.addWalkNavigate(moveScale=2.0)
 tracker.setPosition([0,1.8,0])
 viz.link(tracker,viz.MainView)
-viz.mouse.setVisible(False)
+viz.mouse.setVisible(True)
 
 # Load piazza environment
 piazza = viz.addChild('piazza.osgb')
@@ -48,8 +55,8 @@ male.state(6)
 #fn for setting game appearance
 (flash_quad, status_bar, time_text, score_text, gray_effect) = set_appearance()
 
-# List of hiding spots for pigeons
-pigeons = []
+# List of hiding spots for trash_pile
+trash_pile = []
 
 for i in range(10):
     #Generate random values for position and orientation
@@ -57,110 +64,45 @@ for i in range(10):
     z = random.randint(-7, 7)
     yaw = random.randint(0,360)
 
-    #Load a pigeon
-    pigeon = viz.addAvatar('pigeon.cfg')
+    #Load a trash
+    random_trash_peace = get_random_trash()
 
-    #Set position, orientation, and state
-    pigeon.setPosition([x,0,z])
-    pigeon.setEuler([yaw,0,0])
-    pigeon.state(1)
+    trash = viz.add(random_trash_peace)
 
-    pigeon.visible(False)
+    trash.setPosition([x,0,z])
+    trash.setEuler([yaw,0,0])
 
-    #Append the pigeon to a list of pigeons
-    pigeons.append(pigeon)
+    trash.visible(False)
+
+    trash_pile.append(trash)
 
 def DisplayInstructionsTask():
     """Task that display instructions and waits for keypress to continue"""
     panel = vizinfo.InfoPanel(INSTRUCTIONS,align=viz.ALIGN_CENTER,fontSize=22,icon=False,key=None)
-    pigeonClone = pigeon.clone(scale=[200]*3)
-    pigeonClone.addAction(vizact.spin(0,1,0,45))
-    pigeonClone.enable(viz.DEPTH_TEST,op=viz.OP_ROOT)
-    panel.addItem(pigeonClone,align=viz.ALIGN_CENTER)
+    trashClone = trash.clone(scale=[200]*3)
+    trashClone.addAction(vizact.spin(0,1,0,45))
+    trashClone.enable(viz.DEPTH_TEST,op=viz.OP_ROOT)
+    panel.addItem(trashClone,align=viz.ALIGN_CENTER)
     yield viztask.waitKeyDown(' ')
     panel.remove()
 
-def TrialCountDownTask():
-    """Task that count downs to time limit for trial"""
+# def UpdateScore():
+#     """Update score text"""
+#     score = 10 - len(trash_pile)
 
-    # Action for text fading out
-    text_fade = vizact.parallel(
-        vizact.fadeTo(0,time=0.8,interpolate=vizact.easeOut)
-        ,vizact.sizeTo([1.5,1.5,1.0],time=0.8,interpolate=vizact.easeOut)
-    )
+#     score_text.message('Found: {} / {}'.format(score, TRIAL_COUNT))
 
-    # Reset time text
-    time_text.clearActions()
-    time_text.alpha(1.0)
-    time_text.color(viz.WHITE)
-    time_text.setScale([1,1,1])
-    time_text.message(str(int(TRIAL_DURATION)))
+def pickTrash():
+    object = viz.pick()
 
-    # Countdown from time limit
-    start_time = viz.getFrameTime()
-    last_remain = int(TRIAL_DURATION)
-    while (viz.getFrameTime() - start_time) < TRIAL_DURATION:
+    if object.valid() and object != viz.VizChild(5) and len(player_picks) <= 1:
+        player_picks.append(object)
+        object.visible(False)
+        print(player_picks)
 
-        # Compute remaining whole seconds
-        remain = int(math.ceil(TRIAL_DURATION - (viz.getFrameTime() - start_time)))
-
-        # Update text if time remaining changed
-        if remain != last_remain:
-            if remain <= 5:
-                time_text.alpha(1.0)
-                time_text.color(viz.RED)
-                time_text.setScale([1]*3)
-                time_text.runAction(text_fade)
-                viz.playSound('sounds/beep.wav')
-            time_text.message(str(remain))
-            last_remain = remain
-
-        # Wait tenth of second
-        yield viztask.waitTime(0.1)
-
-def FlashScreen():
-    """Flash screen and fade out"""
-    flash_quad.visible(True)
-    flash_quad.color(viz.WHITE)
-    fade_out = vizact.fadeTo(viz.BLACK,time=FLASH_TIME,interpolate=vizact.easeOutStrong)
-    flash_quad.runAction(vizact.sequence(fade_out,vizact.method.visible(False)))
-
-def FadeToGrayTask():
-    gray_effect.setBlend(0.0)
-    gray_effect.setEnabled(True)
-    yield viztask.waitCall(gray_effect.setBlend,vizact.mix(0.0,1.0,time=1.0))
-
-def UpdateScore(score):
-    """Update score text"""
-    score_text.message('Found: {} / {}'.format(score,TRIAL_COUNT))
-
-def TrialTask(pigeon):
-    # Create proximity sensor for pigeon using main view as target
-    pigeon.visible(True)
-
-    manager = vizproximity.Manager()
-
-    manager.addTarget( vizproximity.Target(viz.MainView) )
-
-    sensor = None
-
-    sensor = vizproximity.Sensor(vizproximity.Sphere(PROXIMITY_RADIUS), pigeon)
-    manager.addSensor(sensor)
-
-        # Wait until pigeon is found or time runs out
-    wait_find = vizproximity.waitEnter(sensor)
-    data = yield viztask.waitAny([wait_find])
-
-    # Hide pigeon and remove proximity sensor
-    manager.remove()
-    pigeon.visible(False)
-
-    # Return whether pigeon was found
-    viztask.returnValue(data.condition is wait_find)
+vizact.onmousedown(viz.MOUSEBUTTON_LEFT, func=pickTrash)
 
 def MainTask():
-    """Top level task that controls the game"""
-
     # Display instructions and wait for key press to continue
     yield DisplayInstructionsTask()
 
@@ -168,30 +110,16 @@ def MainTask():
     resultPanel = vizinfo.InfoPanel('',align=viz.ALIGN_CENTER,fontSize=25,icon=False,key=None)
     resultPanel.visible(False)
 
-    while True:
-        score = 0
-        # Reset score
-        UpdateScore(score)
+    # Go through each position
+    for trash in trash_pile:
+        trash.visible(True)
+        
+    # UpdateScore(SCORE)
 
-        # Go through each position
-        for pigeon in pigeons:
-            # Perform a trial
-            found = yield TrialTask(pigeon)
-
-            if found:
-                score += 1
-                UpdateScore(score)
-
-        if score == len(pigeons):
-            #Display results and ask to quit or play again 
-            resultPanel.setText(RESULTS.format(score,TRIAL_COUNT))
-            resultPanel.visible(True)
-            yield viztask.waitKeyDown(' ')
-            resultPanel.visible(False)
+    if len(trash_pile) == 0:
+        resultPanel.setText(RESULTS.format(SCORE, TRIAL_COUNT))
+        resultPanel.visible(True)
+        yield viztask.waitKeyDown(' ')
+        resultPanel.visible(False)
 
 viztask.schedule( MainTask() )
-
-# Pre-load sounds
-viz.playSound('sounds/beep.wav',viz.SOUND_PRELOAD)
-viz.playSound('sounds/pigeon_fly.wav',viz.SOUND_PRELOAD)
-viz.playSound('sounds/pigeon_catch.wav',viz.SOUND_PRELOAD)
