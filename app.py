@@ -98,7 +98,6 @@ def pickTrash():
     if object.valid() and object != viz.VizChild(5) and len(player_picks) < 1:
         player_picks.append(object)
         object.visible(False)
-        print(player_picks)
 
 vizact.onmousedown(viz.MOUSEBUTTON_LEFT, func=pickTrash)
 
