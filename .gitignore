@@ -3,3 +3,4 @@
 /include
 pyvenv.cfg
 /viz
+__pycache__
