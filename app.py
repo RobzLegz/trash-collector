@@ -8,37 +8,19 @@ import vizfx.postprocess
 from vizfx.postprocess.color import GrayscaleEffect
 from vizfx.postprocess.composite import BlendEffect
 
+from src.apearance import set_appearance
+from src.text import *
+
 import math
 import random
 
-# Script settings
-TIMER_TIMER = 0
-TRIAL_COUNT = 5             # Number of trials per game
-TRIAL_DURATION = 20         # Amount of time allowed for finding each pigeon (in seconds)
-TRIAL_DELAY = 4             # Delay time between trials
-PROXIMITY_RADIUS = 3.0      # Radius for proximity sensor around pigeon
-FLASH_TIME = 3.0            # Time to flash screen at beginning of each trial
-
-# List of hiding spots for pigeons
-HIDING_SPOTS = [
-    [13, 0, 19],
-    [17, 0, 15],
-    [13, 0, 14],
-    [10, 0, 10],
-    [4, 0, 10],
-]
-
-INSTRUCTIONS = """
-Atrodi un savāc visus atkritumus, kuri izmētāti telpā""".format(TRIAL_COUNT,TRIAL_DURATION)
-
-RESULTS = """Tu savāci 10 atkritumus {} ilgā laikā"""
-
-TRIAL_SUCCESS = 'You caught the pigeon!'
-TRIAL_FAIL = 'The pigeon flew away!'
+from src.constants import TRIAL_COUNT, TRIAL_DURATION, TRIAL_DELAY, PROXIMITY_RADIUS, FLASH_TIME
 
 viz.setMultiSample(4)
 viz.fov(60)
 viz.go(viz.FULLSCREEN)
+
+manager = vizproximity.Manager()
 
 # Setup directional light
 viz.MainView.getHeadLight().disable()
@@ -57,9 +39,6 @@ viz.mouse.setVisible(False)
 piazza = viz.addChild('piazza.osgb')
 viz.addChild('piazza_animations.osgb')
 
-# Loop fountain sound
-# piazza.playsound('fountain.wav',viz.LOOP,node='fountain-sound')
-
 # Swap out sky with animated sky dome
 piazza.getChild('pz_skydome').remove()
 day = viz.add('sky_day.osgb')
@@ -68,56 +47,28 @@ day = viz.add('sky_day.osgb')
 male = viz.addAvatar('vcc_male2.cfg',pos=(-6.5,0,13.5),euler=(90,0,0))
 male.state(6)
 
-# Create pigeon
-pigeon_root = viz.addGroup()
-pigeon_root.visible(False)
-pigeon = viz.addAvatar('pigeon.cfg',parent=pigeon_root)
+#fn for setting game appearance
+(flash_quad, status_bar, time_text, score_text, gray_effect) = set_appearance()
 
-# Add idle animation
-random_walk = vizact.walkTo(pos=[vizact.randfloat(-0.5,0.5),0,vizact.randfloat(-0.5,0.5)])
-random_animation = vizact.method.state(vizact.choice([1,3],vizact.RANDOM))
-random_wait = vizact.waittime(vizact.randfloat(4.0,8.0))
-pigeon_idle = vizact.sequence( random_walk, random_animation, random_wait, viz.FOREVER)
-pigeon.runAction(pigeon_idle)
+# List of hiding spots for pigeons
+pigeons = []
+for i in range(10):
 
-# Adding sound to pigeon
-hooting = pigeon.playsound('birds.wav',viz.LOOP)
-hooting.pause()
+    #Generate random values for position and orientation
+    x = random.randint(-4,3)
+    z = random.randint(4,8)
+    yaw = random.randint(0,360)
 
-# Create flash screen quad
-flash_quad = viz.addTexQuad(parent=viz.ORTHO)
-flash_quad.color(viz.WHITE)
-flash_quad.alignment(viz.ALIGN_LEFT_BOTTOM)
-flash_quad.drawOrder(-10)
-flash_quad.blendFunc(viz.GL_ONE,viz.GL_ONE)
-flash_quad.visible(False)
-viz.link(viz.MainWindow.WindowSize,flash_quad,mask=viz.LINK_SCALE)
+    #Load a pigeon
+    pigeon = viz.addAvatar('pigeon.cfg')
 
-# Create status bar background
-status_bar = viz.addTexQuad(parent=viz.ORTHO)
-status_bar.color(viz.BLACK)
-status_bar.alpha(0.5)
-status_bar.alignment(viz.ALIGN_LEFT_BOTTOM)
-status_bar.drawOrder(-1)
-viz.link(viz.MainWindow.LeftTop,status_bar,offset=[0,-80,0])
-viz.link(viz.MainWindow.WindowSize,status_bar,mask=viz.LINK_SCALE)
+    #Set position, orientation, and state
+    pigeon.setPosition([x,0,z])
+    pigeon.setEuler([yaw,0,0])
+    pigeon.state(1)
 
-# Create time limit text
-time_text = viz.addText('',parent=viz.ORTHO,fontSize=40)
-time_text.alignment(viz.ALIGN_CENTER_TOP)
-time_text.setBackdrop(viz.BACKDROP_OUTLINE)
-viz.link(viz.MainWindow.CenterTop,time_text,offset=[0,-20,0])
-
-# Create score text
-score_text = viz.addText('',parent=viz.ORTHO,fontSize=40)
-score_text.alignment(viz.ALIGN_LEFT_TOP)
-score_text.setBackdrop(viz.BACKDROP_OUTLINE)
-viz.link(viz.MainWindow.LeftTop,score_text,offset=[20,-20,0])
-
-# Create post process effect for blending to gray scale
-gray_effect = BlendEffect(None,GrayscaleEffect(),blend=0.0)
-gray_effect.setEnabled(False)
-vizfx.postprocess.addEffect(gray_effect)
+    #Append the pigeon to a list of pigeons
+    pigeons.append(pigeon)
 
 def DisplayInstructionsTask():
     """Task that display instructions and waits for keypress to continue"""
@@ -181,86 +132,27 @@ def FadeToGrayTask():
 
 def UpdateScore(score):
     """Update score text"""
-    score_text.message('Atradāt atkritumu: {} / {}'.format(score,TRIAL_COUNT))
+    score_text.message('Found: {} / {}'.format(score,TRIAL_COUNT))
 
-def TrialTask(pos):
-    """Task for individual trial. Returns whether pigeon was found."""
-
-    #Reset tracker to origin
-    tracker.setPosition([0,1.8,0])
-    tracker.setEuler([0,0,0])
-
-    # Flash screen
-    FlashScreen()
-
-    # Place pigeon at new location
-    pigeon_root.setPosition(pos)
-    pigeon_root.visible(True)
-    hooting.play(loop=True)
-
+def TrialTask(pigeon):
     # Create proximity sensor for pigeon using main view as target
-    manager = vizproximity.Manager()
     #manager.setDebug(True)
+    
     manager.addTarget( vizproximity.Target(viz.MainView) )
-    sensor = vizproximity.Sensor(vizproximity.Sphere(PROXIMITY_RADIUS),pigeon_root)
+
+    sensor = vizproximity.Sensor(vizproximity.Sphere(PROXIMITY_RADIUS),pigeon)
     manager.addSensor(sensor)
 
     # Wait until pigeon is found or time runs out
-    wait_time = viztask.waitTask( TrialCountDownTask() )
     wait_find = vizproximity.waitEnter(sensor)
-    data = yield viztask.waitAny([wait_time,wait_find])
+    data = yield viztask.waitAny([wait_find])
 
     # Hide pigeon and remove proximity sensor
-    pigeon_root.visible(False)
-    hooting.pause()
     manager.remove()
+    pigeon.visible(False)
 
     # Return whether pigeon was found
     viztask.returnValue(data.condition is wait_find)
-
-def display_trash(resultPanel):
-    # Randomly choose hiding spots from list
-    locations = random.sample(HIDING_SPOTS,TRIAL_COUNT)
-
-    # Reset score
-    score = 0
-    UpdateScore(score)
-
-    # Go through each position
-    for pos in locations:
-
-        # Perform a trial
-        found = yield TrialTask(pos)
-
-        # Update score and display status text
-        if found:
-            viz.playSound('sounds/pigeon_catch.wav')
-            score += 1
-            UpdateScore(score)
-            # tracker.runAction(vizact.spinTo(point=pos,time=0.8,interpolate=vizact.easeOutStrong))
-            resultPanel.setText(TRIAL_SUCCESS)
-        else:
-            viz.playSound('sounds/pigeon_fly.wav')
-            viztask.schedule(FadeToGrayTask())
-            resultPanel.setText(TRIAL_FAIL)
-
-        #Display success/failure message
-        resultPanel.visible(True)
-
-        # Add delay before starting next trial
-        yield viztask.waitTime(TRIAL_DELAY)
-        resultPanel.visible(False)
-
-        # Disable gray effect
-        gray_effect.setEnabled(False)
-
-    #Display results and ask to quit or play again
-    resultPanel.setText(RESULTS.format(score,TRIAL_COUNT))
-    resultPanel.visible(True)
-    yield viztask.waitKeyDown(' ')
-    resultPanel.visible(False)
-
-    return False
 
 def MainTask():
     """Top level task that controls the game"""
@@ -272,49 +164,27 @@ def MainTask():
     resultPanel = vizinfo.InfoPanel('',align=viz.ALIGN_CENTER,fontSize=25,icon=False,key=None)
     resultPanel.visible(False)
 
-    display_trash(resultPanel)
-    # while can_load:
-    #     can_load = display_trash(resultPanel)
-    #     # # Randomly choose hiding spots from list
-    #     # locations = random.sample(HIDING_SPOTS,TRIAL_COUNT)
+    while True:
 
-    #     # # Reset score
-    #     # score = 0
-    #     # UpdateScore(score)
+        # Reset score
+        score = 0
+        UpdateScore(score)
 
-    #     # # Go through each position
-    #     # for pos in locations:
+        # Go through each position
+        for pigeon in pigeons:
+            # Perform a trial
+            found = yield TrialTask(pigeon)
 
-    #     #     # Perform a trial
-    #     #     found = yield TrialTask(pos)
+            if found:
+                score += 1
+                UpdateScore(score)
 
-    #     #     # Update score and display status text
-    #     #     if found:
-    #     #         viz.playSound('sounds/pigeon_catch.wav')
-    #     #         score += 1
-    #     #         UpdateScore(score)
-    #     #         tracker.runAction(vizact.spinTo(point=pos,time=0.8,interpolate=vizact.easeOutStrong))
-    #     #         resultPanel.setText(TRIAL_SUCCESS)
-    #     #     else:
-    #     #         viz.playSound('sounds/pigeon_fly.wav')
-    #     #         viztask.schedule(FadeToGrayTask())
-    #     #         resultPanel.setText(TRIAL_FAIL)
-
-    #     #     #Display success/failure message
-    #     #     resultPanel.visible(True)
-
-    #     #     # Add delay before starting next trial
-    #     #     yield viztask.waitTime(TRIAL_DELAY)
-    #     #     resultPanel.visible(False)
-
-    #     #     # Disable gray effect
-    #     #     gray_effect.setEnabled(False)
-
-    #     # #Display results and ask to quit or play again
-    #     # resultPanel.setText(RESULTS.format(score,TRIAL_COUNT))
-    #     # resultPanel.visible(True)
-    #     # yield viztask.waitKeyDown(' ')
-    #     # resultPanel.visible(False)
+        if score == len(pigeons):
+            #Display results and ask to quit or play again
+            resultPanel.setText(RESULTS.format(score,TRIAL_COUNT))
+            resultPanel.visible(True)
+            yield viztask.waitKeyDown(' ')
+            resultPanel.visible(False)
 
 viztask.schedule( MainTask() )
 

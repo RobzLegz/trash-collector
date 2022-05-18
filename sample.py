@@ -7,7 +7,6 @@ import vizproximity
 import vizfx.postprocess
 from vizfx.postprocess.color import GrayscaleEffect
 from vizfx.postprocess.composite import BlendEffect
-from src.apearance import set_appearance
 
 import math
 import random
@@ -68,6 +67,9 @@ viz.mouse.setVisible(False)
 piazza = viz.addChild('piazza.osgb')
 viz.addChild('piazza_animations.osgb')
 
+# Loop fountain sound
+piazza.playsound('fountain.wav',viz.LOOP,node='fountain-sound')
+
 # Swap out sky with animated sky dome
 piazza.getChild('pz_skydome').remove()
 day = viz.add('sky_day.osgb')
@@ -88,8 +90,44 @@ random_wait = vizact.waittime(vizact.randfloat(4.0,8.0))
 pigeon_idle = vizact.sequence( random_walk, random_animation, random_wait, viz.FOREVER)
 pigeon.runAction(pigeon_idle)
 
-#fn for setting game appearance
-(flash_quad, status_bar, time_text, score_text, gray_effect) = set_appearance()
+# Adding sound to pigeon
+hooting = pigeon.playsound('birds.wav',viz.LOOP)
+hooting.pause()
+
+# Create flash screen quad
+flash_quad = viz.addTexQuad(parent=viz.ORTHO)
+flash_quad.color(viz.WHITE)
+flash_quad.alignment(viz.ALIGN_LEFT_BOTTOM)
+flash_quad.drawOrder(-10)
+flash_quad.blendFunc(viz.GL_ONE,viz.GL_ONE)
+flash_quad.visible(False)
+viz.link(viz.MainWindow.WindowSize,flash_quad,mask=viz.LINK_SCALE)
+
+# Create status bar background
+status_bar = viz.addTexQuad(parent=viz.ORTHO)
+status_bar.color(viz.BLACK)
+status_bar.alpha(0.5)
+status_bar.alignment(viz.ALIGN_LEFT_BOTTOM)
+status_bar.drawOrder(-1)
+viz.link(viz.MainWindow.LeftTop,status_bar,offset=[0,-80,0])
+viz.link(viz.MainWindow.WindowSize,status_bar,mask=viz.LINK_SCALE)
+
+# Create time limit text
+time_text = viz.addText('',parent=viz.ORTHO,fontSize=40)
+time_text.alignment(viz.ALIGN_CENTER_TOP)
+time_text.setBackdrop(viz.BACKDROP_OUTLINE)
+viz.link(viz.MainWindow.CenterTop,time_text,offset=[0,-20,0])
+
+# Create score text
+score_text = viz.addText('',parent=viz.ORTHO,fontSize=40)
+score_text.alignment(viz.ALIGN_LEFT_TOP)
+score_text.setBackdrop(viz.BACKDROP_OUTLINE)
+viz.link(viz.MainWindow.LeftTop,score_text,offset=[20,-20,0])
+
+# Create post process effect for blending to gray scale
+gray_effect = BlendEffect(None,GrayscaleEffect(),blend=0.0)
+gray_effect.setEnabled(False)
+vizfx.postprocess.addEffect(gray_effect)
 
 def DisplayInstructionsTask():
     """Task that display instructions and waits for keypress to continue"""
@@ -168,6 +206,7 @@ def TrialTask(pos):
     # Place pigeon at new location
     pigeon_root.setPosition(pos)
     pigeon_root.visible(True)
+    hooting.play(loop=True)
 
     # Create proximity sensor for pigeon using main view as target
     manager = vizproximity.Manager()
@@ -183,6 +222,7 @@ def TrialTask(pos):
 
     # Hide pigeon and remove proximity sensor
     pigeon_root.visible(False)
+    hooting.pause()
     manager.remove()
 
     # Return whether pigeon was found
