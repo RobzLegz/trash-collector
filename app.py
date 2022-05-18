@@ -11,6 +11,7 @@ from vizfx.postprocess.composite import BlendEffect
 
 # from src.pick import *
 from src.utils.randomiseTrash import get_random_trash
+from src.utils.getBinFromIndex import bin_from_index
 from src.apearance import set_appearance
 from src.text import *
 
@@ -59,6 +60,12 @@ male.state(6)
 trash_pile = []
 recicle_bins = []
 
+glass_trash = []
+plastic_trash = []
+paper_trash = []
+
+bin_object = {}
+
 for i in range(10):
     #Generate random values for position and orientation
     x = random.randint(-10, 10)
@@ -75,6 +82,11 @@ for i in range(10):
 
     trash.visible(False)
 
+    if random_trash_peace == "Bottle.osgb":
+        plastic_trash.append(trash)
+    elif random_trash_peace == "GlassBottle.osgb":
+        glass_trash.append(trash)
+    
     trash_pile.append(trash)
 
 for i in range(3):
@@ -82,15 +94,23 @@ for i in range(3):
     z = 0
     yaw = random.randint(0,360)
 
-    recycle_bin = viz.add("soccerball.osgb")
+    bin_type = bin_from_index(i)
+
+    recycle_bin = viz.add(bin_type)
 
     recycle_bin.setPosition([x,0,z])
     recycle_bin.setEuler([yaw,0,0])
 
     recycle_bin.visible(False)
 
-    recicle_bins.append(recycle_bin)
+    if i == 0:
+        bin_object["glass"] = recycle_bin
+    elif i == 1:
+        bin_object["plastic"] = recycle_bin
+    elif i == 2:
+        bin_object["paper"] = recycle_bin
 
+    recicle_bins.append(recycle_bin)
 
 def DisplayInstructionsTask():
     """Task that display instructions and waits for keypress to continue"""
@@ -114,9 +134,21 @@ def pickTrash():
     if object == viz.VizChild(5) or not object.valid():
         return
 
-    if object == viz.VizChild(27) or object == viz.VizChild(28) or object == viz.VizChild(29):
-        player_picks.pop()
-    elif  len(player_picks) < 1:
+    if object in recicle_bins and len(player_picks) == 1:
+        glass_bin = bin_object['glass']
+        plastic_bin = bin_object['plastic']
+        paper_bin = bin_object['paper']
+
+        player_pic = player_picks[0]
+
+        if player_pic in glass_trash and object == glass_bin:
+            player_picks.pop()
+        elif player_pic in plastic_trash and object == plastic_bin:
+            player_picks.pop()
+        elif player_pic in paper_trash and object == paper_bin:
+            player_picks.pop()
+
+    elif object in trash_pile and len(player_picks) < 1:
         player_picks.append(object)
         object.visible(False)
 
