@@ -95,7 +95,7 @@ def DisplayInstructionsTask():
 def pickTrash():
     object = viz.pick()
 
-    if object.valid() and object != viz.VizChild(5) and len(player_picks) <= 1:
+    if object.valid() and object != viz.VizChild(5) and len(player_picks) < 1:
         player_picks.append(object)
         object.visible(False)
         print(player_picks)
