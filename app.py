@@ -12,6 +12,7 @@ import math
 import random
 
 # Script settings
+TIME_COUNT = 0
 TRIAL_COUNT = 5             # Number of trials per game
 TRIAL_DURATION = 20         # Amount of time allowed for finding each pigeon (in seconds)
 TRIAL_DELAY = 4             # Delay time between trials
@@ -68,7 +69,7 @@ piazza = viz.addChild('piazza.osgb')
 viz.addChild('piazza_animations.osgb')
 
 # Loop fountain sound
-piazza.playsound('fountain.wav',viz.LOOP,node='fountain-sound')
+# piazza.playsound('fountain.wav',viz.LOOP,node='fountain-sound')
 
 # Swap out sky with animated sky dome
 piazza.getChild('pz_skydome').remove()
