@@ -57,6 +57,7 @@ male.state(6)
 
 # List of hiding spots for trash_pile
 trash_pile = []
+recicle_bins = []
 
 for i in range(10):
     #Generate random values for position and orientation
@@ -75,6 +76,21 @@ for i in range(10):
     trash.visible(False)
 
     trash_pile.append(trash)
+
+for i in range(3):
+    x = i * 3
+    z = 0
+    yaw = random.randint(0,360)
+
+    recycle_bin = viz.add("soccerball.osgb")
+
+    recycle_bin.setPosition([x,0,z])
+    recycle_bin.setEuler([yaw,0,0])
+
+    recycle_bin.visible(False)
+
+    recicle_bins.append(recycle_bin)
+
 
 def DisplayInstructionsTask():
     """Task that display instructions and waits for keypress to continue"""
@@ -95,7 +111,12 @@ def DisplayInstructionsTask():
 def pickTrash():
     object = viz.pick()
 
-    if object.valid() and object != viz.VizChild(5) and len(player_picks) < 1:
+    if object == viz.VizChild(5) or not object.valid():
+        return
+
+    if object == viz.VizChild(27) or object == viz.VizChild(28) or object == viz.VizChild(29):
+        player_picks.pop()
+    elif  len(player_picks) < 1:
         player_picks.append(object)
         object.visible(False)
 
@@ -112,6 +133,9 @@ def MainTask():
     # Go through each position
     for trash in trash_pile:
         trash.visible(True)
+
+    for recycle_bin in recicle_bins:
+        recycle_bin.visible(True)
         
     # UpdateScore(SCORE)
 
