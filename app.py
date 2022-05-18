@@ -64,6 +64,8 @@ glass_trash = []
 plastic_trash = []
 paper_trash = []
 
+collected_trash = []
+
 bin_object = {}
 
 for i in range(10):
@@ -128,6 +130,10 @@ def DisplayInstructionsTask():
 
 #     score_text.message('Found: {} / {}'.format(score, TRIAL_COUNT))
 
+def dropTrash(object):
+    player_picks.pop()
+    collected_trash.append(object)
+
 def pickTrash():
     object = viz.pick()
 
@@ -142,11 +148,11 @@ def pickTrash():
         player_pic = player_picks[0]
 
         if player_pic in glass_trash and object == glass_bin:
-            player_picks.pop()
+            dropTrash(object)
         elif player_pic in plastic_trash and object == plastic_bin:
-            player_picks.pop()
+            dropTrash(object)
         elif player_pic in paper_trash and object == paper_bin:
-            player_picks.pop()
+            dropTrash(object)
 
     elif object in trash_pile and len(player_picks) < 1:
         player_picks.append(object)
