@@ -53,8 +53,8 @@ pigeons = []
 
 for i in range(10):
     #Generate random values for position and orientation
-    x = random.randint(-4,3)
-    z = random.randint(4,8)
+    x = random.randint(-10, 10)
+    z = random.randint(-7, 7)
     yaw = random.randint(0,360)
 
     #Load a pigeon
@@ -64,6 +64,8 @@ for i in range(10):
     pigeon.setPosition([x,0,z])
     pigeon.setEuler([yaw,0,0])
     pigeon.state(1)
+
+    pigeon.visible(False)
 
     #Append the pigeon to a list of pigeons
     pigeons.append(pigeon)
@@ -134,14 +136,18 @@ def UpdateScore(score):
 
 def TrialTask(pigeon):
     # Create proximity sensor for pigeon using main view as target
+    pigeon.visible(True)
+
     manager = vizproximity.Manager()
 
     manager.addTarget( vizproximity.Target(viz.MainView) )
 
-    sensor = vizproximity.Sensor(vizproximity.Sphere(PROXIMITY_RADIUS),pigeon)
+    sensor = None
+
+    sensor = vizproximity.Sensor(vizproximity.Sphere(PROXIMITY_RADIUS), pigeon)
     manager.addSensor(sensor)
 
-    # Wait until pigeon is found or time runs out
+        # Wait until pigeon is found or time runs out
     wait_find = vizproximity.waitEnter(sensor)
     data = yield viztask.waitAny([wait_find])
 
@@ -163,8 +169,8 @@ def MainTask():
     resultPanel.visible(False)
 
     while True:
-        # Reset score
         score = 0
+        # Reset score
         UpdateScore(score)
 
         # Go through each position
