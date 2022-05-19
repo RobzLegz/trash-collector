@@ -140,7 +140,7 @@ def removeObjects():
         recycle_bin.visible(False)
 
 def showResults():
-    if len(collected_trash) >= 12:
+    if len(collected_trash) >= 13:
         resultPanel.setText(RESULTS)
         resultPanel.visible(True)
         removeObjects()
@@ -162,7 +162,7 @@ def DisplayInventory():
 
         inventory.message(PICKED_TRASH.format(item_type))
 
-    if len(collected_trash) >= 12:
+    if len(collected_trash) >= 13:
         showResults()
 
 def dropTrash(object):
