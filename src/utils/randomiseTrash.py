@@ -3,6 +3,7 @@ import random
 trash_options = [
     "Bottle.osgb",
     "GlassBottle.osgb",
+    "CardboardBox.osgb"
 ]
 
 def get_random_trash():

@@ -1,7 +1,7 @@
 bins = [
-    "RecycleBin.fbx",
-    "soccerball.osgb",
-    "volleyball.osgb",
+    "RecycleBin_Glass.fbx",
+    "RecycleBin_Paper.fbx",
+    "RecycleBin_Plastic.fbx",
 ]
 
 def bin_from_index(index):

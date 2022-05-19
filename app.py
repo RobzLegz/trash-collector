@@ -88,13 +88,15 @@ for i in range(10):
         plastic_trash.append(trash)
     elif random_trash_peace == "GlassBottle.osgb":
         glass_trash.append(trash)
+    elif random_trash_peace == "CardboardBox.osgb":
+        paper_trash.append(trash)
     
     trash_pile.append(trash)
 
 for i in range(3):
-    x = i * 3
+    x = i * -2
     z = 0
-    yaw = random.randint(0,360)
+    yaw = random.randint(0, 20)
 
     bin_type = bin_from_index(i)
 
