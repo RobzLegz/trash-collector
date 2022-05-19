@@ -29,13 +29,6 @@ viz.collision(viz.ON)
 
 player_picks = []
 
-# Setup directional light
-viz.MainView.getHeadLight().disable()
-sky_light = viz.addDirectionalLight(euler=(0,20,0))
-sky_light.color(viz.WHITE)
-sky_light.ambient([0.8]*3)
-viz.setOption('viz.lightModel.ambient',[0]*3)
-
 # Setup keyboard/mouse tracker
 tracker = vizcam.addWalkNavigate(moveScale=2.0)
 tracker.setPosition([0,1.8,0])
