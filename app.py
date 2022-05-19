@@ -36,16 +36,27 @@ viz.link(tracker,viz.MainView)
 viz.mouse.setVisible(True)
 
 # Load piazza environment
-piazza = viz.addChild('piazza.osgb')
-viz.addChild('piazza_animations.osgb')
+piazza = viz.addChild('CityPark.osgb')
+# viz.addChild('piazza_animations.osgb')
 
-# Swap out sky with animated sky dome
-piazza.getChild('pz_skydome').remove()
-day = viz.add('sky_day.osgb')
+mylight = viz.addLight() 
 
-# Add avatar sitting on a bench
-male = viz.addAvatar('vcc_male2.cfg',pos=(-6.5,0,13.5),euler=(90,0,0))
-male.state(6)
+#Set the light parameters 
+mylight.position(0,10,0) 
+mylight.direction(0,0,90) 
+mylight.spread(180) 
+mylight.intensity(20) 
+mylight.spotexponent(2) 
+mylight.setPosition(0,10,0) 
+
+mylight2 = viz.addLight() 
+#Set the light parameters 
+mylight2.position(0,1000,0) 
+mylight2.direction(0,0,90) 
+mylight2.spread(180) 
+mylight2.intensity(20) 
+mylight2.spotexponent(2) 
+mylight2.setPosition(0,1000,0)
 
 #fn for setting game appearance
 (flash_quad, status_bar, time_text, score_text, gray_effect, inventory, resultPanel) = set_appearance()
@@ -64,8 +75,8 @@ bin_object = {}
 
 for i in range(10):
     #Generate random values for position and orientation
-    x = random.randint(-10, 10)
-    z = random.randint(-7, 7)
+    x = random.randint(-2, 2)
+    z = random.randint(-5, 15)
     yaw = random.randint(0,360)
 
     #Load a trash
@@ -88,8 +99,10 @@ for i in range(10):
     trash_pile.append(trash)
 
 for i in range(3):
-    x = i * -2
-    z = 0
+    xer = i + 1
+
+    x = xer * -2 - 2
+    z = 3
     yaw = random.randint(0, 20)
 
     bin_type = bin_from_index(i)
