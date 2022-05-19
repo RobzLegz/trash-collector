@@ -4,6 +4,8 @@ INSTRUCTIONS = """
 Vai esi gatavs šķirot atkritumus?
 Nospied atstarpi, lai sāktu!"""
 
+PICKED_TRASH = """Esi pacēlis {} atkritumu, iemet to attiecīgajā konteinerā"""
+
 RESULTS = """Jūs sašķirojāt atkritumus {} ilgā laikā"""
 
 TRIAL_SUCCESS = 'You caught the pigeon!'

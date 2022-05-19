@@ -35,9 +35,14 @@ def set_appearance():
     score_text.setBackdrop(viz.BACKDROP_OUTLINE)
     viz.link(viz.MainWindow.LeftTop,score_text,offset=[20,-20,0])
 
+    inventory = viz.addText('',parent=viz.ORTHO,fontSize=40)
+    inventory.alignment(viz.ALIGN_LEFT_TOP)
+    inventory.setBackdrop(viz.BACKDROP_OUTLINE)
+    viz.link(viz.MainWindow.LeftTop,inventory,offset=[20,-20,0])
+
     # Create post process effect for blending to gray scale
     gray_effect = BlendEffect(None,GrayscaleEffect(),blend=0.0)
     gray_effect.setEnabled(False)
     vizfx.postprocess.addEffect(gray_effect)
 
-    return (flash_quad, status_bar, time_text, score_text, gray_effect)
+    return (flash_quad, status_bar, time_text, score_text, gray_effect, inventory)

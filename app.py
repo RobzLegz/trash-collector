@@ -48,7 +48,7 @@ male = viz.addAvatar('vcc_male2.cfg',pos=(-6.5,0,13.5),euler=(90,0,0))
 male.state(6)
 
 #fn for setting game appearance
-(flash_quad, status_bar, time_text, score_text, gray_effect) = set_appearance()
+(flash_quad, status_bar, time_text, score_text, gray_effect, inventory) = set_appearance()
 
 # List of hiding spots for trash_pile
 trash_pile = []
@@ -104,9 +104,9 @@ for i in range(3):
     if i == 0:
         bin_object["glass"] = recycle_bin
     elif i == 1:
-        bin_object["plastic"] = recycle_bin
-    elif i == 2:
         bin_object["paper"] = recycle_bin
+    elif i == 2:
+        bin_object["plastic"] = recycle_bin
 
     recicle_bins.append(recycle_bin)
 
@@ -119,6 +119,26 @@ def DisplayInstructionsTask():
     yield viztask.waitKeyDown(' ')
     panel.remove()
 
+def DisplayInventory():
+    if len(player_picks) < 1:
+        inventory.message("")
+
+
+        return
+
+    item = player_picks[0]
+
+    item_type = ""
+
+    if item in plastic_trash:
+        item_type = "plastmasas"
+    elif item in glass_trash:
+        item_type = "stikla"
+    elif item in paper_trash:
+        item_type = "papīra"
+
+    inventory.message(PICKED_TRASH.format(item_type))
+
 def UpdateScore(TIMER_TIMER):
     print(TIMER_TIMER)
     score_text.message(f'Time: {TIMER_TIMER}')
@@ -126,6 +146,8 @@ def UpdateScore(TIMER_TIMER):
 def dropTrash(object):
     player_picks.pop()
     collected_trash.append(object)
+
+    DisplayInventory()
 
 def pickTrash():
     object = viz.pick()
@@ -150,6 +172,8 @@ def pickTrash():
     elif object in trash_pile and len(player_picks) < 1:
         player_picks.append(object)
         object.visible(False)
+
+    DisplayInventory()
 
 vizact.onmousedown(viz.MOUSEBUTTON_LEFT, func=pickTrash)
 
