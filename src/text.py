@@ -6,7 +6,7 @@ Nospied atstarpi, lai sāktu!"""
 
 PICKED_TRASH = """Esi pacēlis {} atkritumu, iemet to attiecīgajā konteinerā"""
 
-RESULTS = """Jūs sašķirojāt atkritumus {} ilgā laikā"""
+RESULTS = """Apsveicam! Jūs sašķirojāt visus atkritumus"""
 
 TRIAL_SUCCESS = 'You caught the pigeon!'
 TRIAL_FAIL = 'The pigeon flew away!'

@@ -48,7 +48,7 @@ male = viz.addAvatar('vcc_male2.cfg',pos=(-6.5,0,13.5),euler=(90,0,0))
 male.state(6)
 
 #fn for setting game appearance
-(flash_quad, status_bar, time_text, score_text, gray_effect, inventory) = set_appearance()
+(flash_quad, status_bar, time_text, score_text, gray_effect, inventory, resultPanel) = set_appearance()
 
 # List of hiding spots for trash_pile
 trash_pile = []
@@ -119,29 +119,38 @@ def DisplayInstructionsTask():
     yield viztask.waitKeyDown(' ')
     panel.remove()
 
+def removeObjects():
+    for trash in trash_pile:
+        trash.visible(False)
+
+    for recycle_bin in recicle_bins:
+        recycle_bin.visible(False)
+
+def showResults():
+    if len(collected_trash) >= 9:
+        resultPanel.setText(RESULTS)
+        resultPanel.visible(True)
+        removeObjects()
+
 def DisplayInventory():
     if len(player_picks) < 1:
         inventory.message("")
+    else:
+        item = player_picks[0]
 
+        item_type = ""
 
-        return
+        if item in plastic_trash:
+            item_type = "plastmasas"
+        elif item in glass_trash:
+            item_type = "stikla"
+        elif item in paper_trash:
+            item_type = "papīra"
 
-    item = player_picks[0]
+        inventory.message(PICKED_TRASH.format(item_type))
 
-    item_type = ""
-
-    if item in plastic_trash:
-        item_type = "plastmasas"
-    elif item in glass_trash:
-        item_type = "stikla"
-    elif item in paper_trash:
-        item_type = "papīra"
-
-    inventory.message(PICKED_TRASH.format(item_type))
-
-def UpdateScore(TIMER_TIMER):
-    print(TIMER_TIMER)
-    score_text.message(f'Time: {TIMER_TIMER}')
+    if len(collected_trash) >= 9:
+        showResults()
 
 def dropTrash(object):
     player_picks.pop()
@@ -181,28 +190,11 @@ def MainTask():
     # Display instructions and wait for key press to continue
     yield DisplayInstructionsTask()
 
-    TIMER_TIMER = 0
-
-    # Create panel to display trial results
-    resultPanel = vizinfo.InfoPanel('',align=viz.ALIGN_CENTER,fontSize=25,icon=False,key=None)
-    resultPanel.visible(False)
-
     # Go through each position
     for trash in trash_pile:
         trash.visible(True)
 
     for recycle_bin in recicle_bins:
         recycle_bin.visible(True)
-
-    # while len(collected_trash) < 10:
-    #     TIMER_TIMER += 1
-    #     UpdateScore(TIMER_TIMER)
-    #     time.sleep(1)
-    
-    if len(collected_trash) >= 10:
-        resultPanel.setText(RESULTS.format(TIMER_TIMER))
-        resultPanel.visible(True)
-        yield viztask.waitKeyDown(' ')
-        resultPanel.visible(False)
 
 viztask.schedule( MainTask() )

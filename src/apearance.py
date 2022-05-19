@@ -1,5 +1,6 @@
 import viz
 import vizfx
+import vizinfo
 import vizfx.postprocess
 from vizfx.postprocess.color import GrayscaleEffect
 from vizfx.postprocess.composite import BlendEffect
@@ -45,4 +46,7 @@ def set_appearance():
     gray_effect.setEnabled(False)
     vizfx.postprocess.addEffect(gray_effect)
 
-    return (flash_quad, status_bar, time_text, score_text, gray_effect, inventory)
+    resultPanel = vizinfo.InfoPanel('', align=viz.ALIGN_CENTER, fontSize=25, icon=False, key=None)
+    resultPanel.visible(False)
+
+    return (flash_quad, status_bar, time_text, score_text, gray_effect, inventory, resultPanel)
