@@ -73,10 +73,10 @@ collected_trash = []
 
 bin_object = {}
 
-for i in range(10):
+for i in range(13):
     #Generate random values for position and orientation
     x = random.randint(-2, 2)
-    z = random.randint(-5, 15)
+    z = random.randint(-5, 19)
     yaw = random.randint(0,360)
 
     #Load a trash
@@ -140,7 +140,7 @@ def removeObjects():
         recycle_bin.visible(False)
 
 def showResults():
-    if len(collected_trash) >= 9:
+    if len(collected_trash) >= 12:
         resultPanel.setText(RESULTS)
         resultPanel.visible(True)
         removeObjects()
@@ -162,7 +162,7 @@ def DisplayInventory():
 
         inventory.message(PICKED_TRASH.format(item_type))
 
-    if len(collected_trash) >= 9:
+    if len(collected_trash) >= 12:
         showResults()
 
 def dropTrash(object):
