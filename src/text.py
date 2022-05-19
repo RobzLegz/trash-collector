@@ -4,8 +4,7 @@ INSTRUCTIONS = """
 Vai esi gatavs šķirot atkritumus?
 Nospied atstarpi, lai sāktu!"""
 
-RESULTS = """You found {} of {} pigeons.
-Press spacebar to start over or escape to exit."""
+RESULTS = """Jūs sašķirojāt atkritumus {} ilgā laikā"""
 
 TRIAL_SUCCESS = 'You caught the pigeon!'
 TRIAL_FAIL = 'The pigeon flew away!'

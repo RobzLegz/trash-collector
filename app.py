@@ -17,10 +17,11 @@ from src.text import *
 
 import math
 import random
+import datetime
+import time
 
 from src.constants import *
 
-SCORE = 0
 viz.setMultiSample(4)
 viz.fov(80)
 viz.go(viz.FULLSCREEN)
@@ -117,7 +118,6 @@ for i in range(3):
     recicle_bins.append(recycle_bin)
 
 def DisplayInstructionsTask():
-    """Task that display instructions and waits for keypress to continue"""
     panel = vizinfo.InfoPanel(INSTRUCTIONS,align=viz.ALIGN_CENTER,fontSize=22,icon=False,key=None)
     trashClone = trash.clone(scale=[200]*3)
     trashClone.addAction(vizact.spin(0,1,0,45))
@@ -126,11 +126,9 @@ def DisplayInstructionsTask():
     yield viztask.waitKeyDown(' ')
     panel.remove()
 
-# def UpdateScore():
-#     """Update score text"""
-#     score = 10 - len(trash_pile)
-
-#     score_text.message('Found: {} / {}'.format(score, TRIAL_COUNT))
+def UpdateScore(TIMER_TIMER):
+    print(TIMER_TIMER)
+    score_text.message(f'Time: {TIMER_TIMER}')
 
 def dropTrash(object):
     player_picks.pop()
@@ -166,6 +164,8 @@ def MainTask():
     # Display instructions and wait for key press to continue
     yield DisplayInstructionsTask()
 
+    TIMER_TIMER = 0
+
     # Create panel to display trial results
     resultPanel = vizinfo.InfoPanel('',align=viz.ALIGN_CENTER,fontSize=25,icon=False,key=None)
     resultPanel.visible(False)
@@ -176,11 +176,14 @@ def MainTask():
 
     for recycle_bin in recicle_bins:
         recycle_bin.visible(True)
-        
-    # UpdateScore(SCORE)
 
-    if len(trash_pile) == 0:
-        resultPanel.setText(RESULTS.format(SCORE, TRIAL_COUNT))
+    # while len(collected_trash) < 10:
+    #     TIMER_TIMER += 1
+    #     UpdateScore(TIMER_TIMER)
+    #     time.sleep(1)
+    
+    if len(collected_trash) >= 10:
+        resultPanel.setText(RESULTS.format(TIMER_TIMER))
         resultPanel.visible(True)
         yield viztask.waitKeyDown(' ')
         resultPanel.visible(False)
